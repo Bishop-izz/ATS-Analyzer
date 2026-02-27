@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Resume ATS Analyzer - Result</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00c9a7;
+            --accent-dark: #00a88a;
+            --coral: #ff6b6b;
+            --mint: #00c9a7;
+            --text-dark: #1a1d23;
+            --text-soft: #5c6370;
+        }
+
+        * { box-sizing: border-box; }
+
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        body {
+            margin: 0;
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(160deg, #f0f9ff 0%, #e8f5f1 30%, #fff5f0 60%, #faf8ff 100%);
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 44px 48px;
+            border-radius: 28px;
+            width: 100%;
+            max-width: 620px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06),
+                        0 24px 48px -12px rgba(0, 0, 0, 0.1),
+                        0 0 0 1px rgba(0, 201, 167, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .tagline {
+            text-align: center;
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            text-align: center;
+            color: var(--text-dark);
+            margin: 0 0 28px 0;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .score-wrap {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .score {
+    font-family: 'DM Sans', sans-serif;   /* changed font only */
+    font-size: 2.75rem;
+    font-weight: 700;                     /* slightly reduced weight for better balance */
+    letter-spacing: -0.02em;              /* smoother number spacing */
+    color: var(--accent);
+    display: inline-block;
+    padding: 20px 40px;
+    background: linear-gradient(135deg, rgba(0, 201, 167, 0.12) 0%, rgba(0, 201, 167, 0.06) 100%);
+    border-radius: 20px;
+    border: 2px solid rgba(0, 201, 167, 0.35);
+}
+
+        .score-label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-soft);
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        h3 {
+            font-family: 'Syne', sans-serif;
+            color: var(--text-dark);
+            margin: 24px 0 14px 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            background: rgba(255, 255, 255, 0.9);
+            margin-bottom: 10px;
+            padding: 14px 20px;
+            border-radius: 14px;
+            font-weight: 600;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        li:hover {
+            transform: translateX(6px);
+        }
+
+        .matched li {
+            border-left: 4px solid var(--mint);
+            background: linear-gradient(90deg, rgba(0, 201, 167, 0.08) 0%, rgba(255, 255, 255, 0.95) 100%);
+        }
+
+        .missing li {
+            border-left: 4px solid var(--coral);
+            background: linear-gradient(90deg, rgba(255, 107, 107, 0.08) 0%, rgba(255, 255, 255, 0.95) 100%);
+        }
+
+        .insight {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--text-soft);
+            text-align: center;
+            font-weight: 600;
+        }
+
+        img {
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 32px;
+            text-decoration: none;
+            color: #fff;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            padding: 16px 28px;
+            border-radius: 16px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 8px 24px rgba(0, 201, 167, 0.35);
+        }
+
+        a:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 36px rgba(0, 201, 167, 0.45);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <p class="tagline">Your next opportunity starts here</p>
+    <h1>Resume Analysis Report</h1>
+
+    <div class="score-wrap">
+        <span class="score">{{ score }}%</span>
+        <span class="score-label">Applicant Tracking System Match Score</span>
+    </div>
+
+    <h3>✔ Matched Skills</h3>
+    <ul class="matched">
+        {% for skill in matched_skills %}
+            <li>{{ skill|capitalize }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>⚠ Skills to Improve</h3>
+    <ul class="missing">
+        {% for skill in missing_skills %}
+            <li>{{ skill|capitalize }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Skill Breakdown Chart</h3>
+    <img src="{{ chart_path }}" width="500">
+
+    <div class="insight">
+        Strengthen the missing skills to increase your chances of passing ATS filters.
+    </div>
+
+    <h3>🏆 Best Matching Career Role</h3>
+    <div class="score-wrap">
+        <span class="score">{{ best_role.role }} - {{ best_role.score }}%</span>
+        <span class="score-label">Highest Compatibility Based on Your Resume</span>
+    </div>
+
+    <h3>📊 Role Comparison Overview</h3>
+    <ul class="matched">
+        {% for item in top_roles %}
+            <li>
+                {{ item.role }} — {{ item.score }}%
+                {% if item.role == best_role.role %}
+                    ⭐
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <a href="/">← Analyze Another Resume</a>
+</div>
+
+</body>
+</html>
