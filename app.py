@@ -1,8 +1,6 @@
 from flask import Flask, render_template, request
 import pdfplumber
 import docx
-import pytesseract
-from PIL import Image
 import re
 import spacy
 import matplotlib
@@ -82,25 +80,27 @@ SYNONYMS = {
 }
 
 # -----------------------------------
-# TEXT EXTRACTION
+# TEXT EXTRACTION (FIXED)
 # -----------------------------------
 def extract_text(file):
     filename = file.filename.lower()
     try:
         if filename.endswith('.pdf'):
             with pdfplumber.open(file) as pdf:
-                return " ".join(page.extract_text() or "" for page in pdf.pages)
+                text = " ".join(page.extract_text() or "" for page in pdf.pages)
+                return text.strip()
 
         elif filename.endswith('.docx'):
             doc = docx.Document(file)
-            return " ".join(para.text for para in doc.paragraphs)
+            text = " ".join(para.text for para in doc.paragraphs)
+            return text.strip()
 
         elif filename.endswith('.txt'):
-            return file.read().decode('utf-8')
+            return file.read().decode('utf-8').strip()
 
+        # Image OCR disabled (not supported on Render free plan)
         elif filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp')):
-            image = Image.open(file)
-            return pytesseract.image_to_string(image)
+            return ""
 
     except Exception as e:
         print("Error extracting text:", e)
@@ -110,17 +110,6 @@ def extract_text(file):
 # -----------------------------------
 # HELPERS
 # -----------------------------------
-def detect_experience(text):
-    matches = re.findall(r'(\d+)\+?\s+years', text.lower())
-    return max([int(x) for x in matches]) if matches else 0
-
-def detect_education(text):
-    degrees = ["bachelor", "master", "phd", "b.tech", "m.tech"]
-    return [deg for deg in degrees if deg in text.lower()]
-
-def detect_projects(text):
-    return "project" in text.lower()
-
 def match_skill(skill, text):
     if skill in text:
         return True
@@ -130,9 +119,6 @@ def match_skill(skill, text):
                 return True
     return False
 
-# -----------------------------------
-# MODERN SKILL PERCENTAGE CHART
-# -----------------------------------
 def generate_skill_chart(matched_count, total_skill_count):
     skill_percentage = (matched_count / total_skill_count) * 100 if total_skill_count > 0 else 0
     remaining_percentage = 100 - skill_percentage
@@ -141,24 +127,15 @@ def generate_skill_chart(matched_count, total_skill_count):
     values = [skill_percentage, remaining_percentage]
 
     plt.figure(figsize=(8, 5))
-    colors = ['#4CAF50', '#E0E0E0']
+    bars = plt.bar(labels, values)
 
-    bars = plt.bar(labels, values, color=colors)
     for bar in bars:
         height = bar.get_height()
-        plt.text(
-            bar.get_x() + bar.get_width() / 2,
-            height,
-            f'{height:.1f}%',
-            ha='center',
-            va='bottom',
-            fontsize=12,
-            fontweight='bold'
-        )
+        plt.text(bar.get_x() + bar.get_width() / 2, height,
+                 f'{height:.1f}%', ha='center', va='bottom')
 
     plt.ylim(0, 100)
-    plt.title('Skill Match Percentage', fontsize=16, fontweight='bold')
-    plt.ylabel('Percentage')
+    plt.title('Skill Match Percentage')
     plt.tight_layout()
 
     chart_path = os.path.join('static', 'skill_chart.png')
@@ -167,13 +144,10 @@ def generate_skill_chart(matched_count, total_skill_count):
 
     return chart_path
 
-# -----------------------------------
-# SCORING SYSTEM
-# -----------------------------------
 def calculate_score(resume_text, job_role):
     job_data = JOB_ROLES.get(job_role)
     if not job_data:
-        return 0, [], [], 0, [], {}
+        return 0, [], []
 
     resume_text = resume_text.lower()
 
@@ -183,26 +157,16 @@ def calculate_score(resume_text, job_role):
     matched = []
     missing = []
 
-    earned_skill_points = 0
-    total_skill_points = (len(core_skills) * 10) + (len(secondary_skills) * 5)
-
-    for skill in core_skills:
+    for skill in core_skills + secondary_skills:
         if match_skill(skill, resume_text):
-            earned_skill_points += 10
             matched.append(skill)
         else:
             missing.append(skill)
 
-    for skill in secondary_skills:
-        if match_skill(skill, resume_text):
-            earned_skill_points += 5
-            matched.append(skill)
-        else:
-            missing.append(skill)
+    total_skills = len(core_skills) + len(secondary_skills)
+    score = (len(matched) / total_skills) * 100 if total_skills > 0 else 0
 
-    skill_percentage = (earned_skill_points / total_skill_points) * 100 if total_skill_points > 0 else 0
-
-    return round(skill_percentage, 2), matched, missing, 0, [], {}
+    return round(score, 2), matched, missing
 
 # -----------------------------------
 # ROUTES
@@ -213,7 +177,6 @@ def home():
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-
     if 'resume' not in request.files:
         return "No file uploaded"
 
@@ -231,38 +194,18 @@ def analyze():
     if not resume_text:
         return "Could not extract text from file"
 
-    # Selected role analysis
-    score, matched, missing, _, _, _ = calculate_score(resume_text, job_role)
+    score, matched, missing = calculate_score(resume_text, job_role)
 
     total_skills = len(JOB_ROLES[job_role]["core"]) + len(JOB_ROLES[job_role]["secondary"])
     chart_path = generate_skill_chart(len(matched), total_skills)
-
-    # -------- MULTI ROLE COMPARISON --------
-    role_comparison = []
-
-    for role in JOB_ROLES.keys():
-        role_score, _, _, _, _, _ = calculate_score(resume_text, role)
-
-        role_comparison.append({
-            "role": role,
-            "score": role_score
-        })
-
-    role_comparison = sorted(role_comparison, key=lambda x: x["score"], reverse=True)
-
-    top_roles = role_comparison[:5]
-    best_role = top_roles[0]
 
     return render_template(
         "result.html",
         score=score,
         matched_skills=matched,
         missing_skills=missing,
-        chart_path=chart_path,
-        top_roles=top_roles,
-        best_role=best_role
+        chart_path=chart_path
     )
 
-# -----------------------------------
 if __name__ == '__main__':
     app.run(debug=True)
