@@ -2,11 +2,11 @@ from flask import Flask, render_template, request
 import pdfplumber
 import docx
 import re
-import spacy
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
+import requests
 
 app = Flask(__name__)
 
@@ -14,12 +14,10 @@ app = Flask(__name__)
 if not os.path.exists("static"):
     os.makedirs("static")
 
-# Load SpaCy model
-nlp = spacy.load("en_core_web_sm")
-
 # -----------------------------------
 # JOB ROLE DATABASE
 # -----------------------------------
+
 JOB_ROLES = {
     "AI Engineer": {
         "core": ["python", "machine learning", "deep learning", "tensorflow", "pytorch"],
@@ -70,6 +68,7 @@ JOB_ROLES = {
 # -----------------------------------
 # SYNONYMS
 # -----------------------------------
+
 SYNONYMS = {
     "artificial intelligence": ["ai"],
     "machine learning": ["ml"],
@@ -80,27 +79,58 @@ SYNONYMS = {
 }
 
 # -----------------------------------
-# TEXT EXTRACTION (FIXED)
+# TEXT EXTRACTION (UPDATED WITH OCR API)
 # -----------------------------------
+
 def extract_text(file):
     filename = file.filename.lower()
+
     try:
+        # PDF
         if filename.endswith('.pdf'):
             with pdfplumber.open(file) as pdf:
                 text = " ".join(page.extract_text() or "" for page in pdf.pages)
                 return text.strip()
 
+        # DOCX
         elif filename.endswith('.docx'):
             doc = docx.Document(file)
             text = " ".join(para.text for para in doc.paragraphs)
             return text.strip()
 
+        # TXT
         elif filename.endswith('.txt'):
             return file.read().decode('utf-8').strip()
 
-        # Image OCR disabled (not supported on Render free plan)
+        # IMAGE FILES → OCR.Space API
         elif filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp')):
-            return ""
+
+            api_key = os.getenv("OCR_SPACE_API_KEY")
+
+            payload = {
+                'apikey': api_key,
+                'language': 'eng',
+                'isOverlayRequired': False
+            }
+
+            files = {
+                'file': (file.filename, file.stream, file.mimetype)
+            }
+
+            response = requests.post(
+                'https://api.ocr.space/parse/image',
+                files=files,
+                data=payload
+            )
+
+            result = response.json()
+
+            if result.get("IsErroredOnProcessing"):
+                print("OCR Error:", result.get("ErrorMessage"))
+                return ""
+
+            parsed_text = result["ParsedResults"][0]["ParsedText"]
+            return parsed_text.strip()
 
     except Exception as e:
         print("Error extracting text:", e)
@@ -110,6 +140,7 @@ def extract_text(file):
 # -----------------------------------
 # HELPERS
 # -----------------------------------
+
 def match_skill(skill, text):
     if skill in text:
         return True
@@ -118,6 +149,7 @@ def match_skill(skill, text):
             if synonym in text:
                 return True
     return False
+
 
 def generate_skill_chart(matched_count, total_skill_count):
     skill_percentage = (matched_count / total_skill_count) * 100 if total_skill_count > 0 else 0
@@ -144,6 +176,7 @@ def generate_skill_chart(matched_count, total_skill_count):
 
     return chart_path
 
+
 def calculate_score(resume_text, job_role):
     job_data = JOB_ROLES.get(job_role)
     if not job_data:
@@ -168,12 +201,15 @@ def calculate_score(resume_text, job_role):
 
     return round(score, 2), matched, missing
 
+
 # -----------------------------------
 # ROUTES
 # -----------------------------------
+
 @app.route('/')
 def home():
     return render_template("index.html", job_roles=JOB_ROLES.keys())
+
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -206,6 +242,7 @@ def analyze():
         missing_skills=missing,
         chart_path=chart_path
     )
+
 
 if __name__ == '__main__':
     app.run(debug=True)
