@@ -105,7 +105,7 @@ def extract_text(file):
         # IMAGE FILES → OCR.Space API
         elif filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp')):
 
-            api_key = os.getenv("OCR_SPACE_API_KEY")
+            api_key = os.getenv("K89131165488957")
 
             payload = {
                 'apikey': api_key,
@@ -246,3 +246,4 @@ def analyze():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
