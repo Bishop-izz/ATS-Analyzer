@@ -79,33 +79,39 @@ SYNONYMS = {
 }
 
 # -----------------------------------
-# TEXT EXTRACTION (UPDATED WITH OCR API)
+# TEXT EXTRACTION (FIXED)
 # -----------------------------------
 
 def extract_text(file):
     filename = file.filename.lower()
 
     try:
-        # PDF
+        # PDF ✅ FIXED
         if filename.endswith('.pdf'):
-            with pdfplumber.open(file) as pdf:
+            file.stream.seek(0)
+            with pdfplumber.open(file.stream) as pdf:
                 text = " ".join(page.extract_text() or "" for page in pdf.pages)
                 return text.strip()
 
-        # DOCX
+        # DOCX ✅ FIXED
         elif filename.endswith('.docx'):
-            doc = docx.Document(file)
+            file.stream.seek(0)
+            doc = docx.Document(file.stream)
             text = " ".join(para.text for para in doc.paragraphs)
             return text.strip()
 
         # TXT
         elif filename.endswith('.txt'):
+            file.stream.seek(0)
             return file.read().decode('utf-8').strip()
 
-        # IMAGE FILES → OCR.Space API
+        # IMAGE FILES → OCR.Space API ✅ SAFER
         elif filename.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp')):
 
             api_key = os.getenv("OCR_SPACE_API_KEY")
+            if not api_key:
+                print("OCR API key missing")
+                return ""
 
             payload = {
                 'apikey': api_key,
@@ -113,6 +119,7 @@ def extract_text(file):
                 'isOverlayRequired': False
             }
 
+            file.stream.seek(0)
             files = {
                 'file': (file.filename, file.stream, file.mimetype)
             }
@@ -120,7 +127,8 @@ def extract_text(file):
             response = requests.post(
                 'https://api.ocr.space/parse/image',
                 files=files,
-                data=payload
+                data=payload,
+                timeout=60
             )
 
             result = response.json()
@@ -158,6 +166,7 @@ def generate_skill_chart(matched_count, total_skill_count):
     labels = ['Skill Match %', 'Remaining %']
     values = [skill_percentage, remaining_percentage]
 
+    plt.clf()  # ✅ prevents overwrite crash
     plt.figure(figsize=(8, 5))
     bars = plt.bar(labels, values)
 
@@ -246,5 +255,3 @@ def analyze():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
