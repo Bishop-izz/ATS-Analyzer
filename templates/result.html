@@ -65,23 +65,20 @@
             letter-spacing: -0.02em;
         }
 
-        .score-wrap {
-            text-align: center;
-            margin-bottom: 32px;
-        }
+        .score-wrap { text-align: center; margin-bottom: 32px; }
 
         .score {
-    font-family: 'DM Sans', sans-serif;   /* changed font only */
-    font-size: 2.75rem;
-    font-weight: 700;                     /* slightly reduced weight for better balance */
-    letter-spacing: -0.02em;              /* smoother number spacing */
-    color: var(--accent);
-    display: inline-block;
-    padding: 20px 40px;
-    background: linear-gradient(135deg, rgba(0, 201, 167, 0.12) 0%, rgba(0, 201, 167, 0.06) 100%);
-    border-radius: 20px;
-    border: 2px solid rgba(0, 201, 167, 0.35);
-}
+            font-family: 'DM Sans', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--accent);
+            display: inline-block;
+            padding: 20px 40px;
+            background: linear-gradient(135deg, rgba(0, 201, 167, 0.12) 0%, rgba(0, 201, 167, 0.06) 100%);
+            border-radius: 20px;
+            border: 2px solid rgba(0, 201, 167, 0.35);
+        }
 
         .score-label {
             display: block;
@@ -99,11 +96,7 @@
             font-weight: 700;
         }
 
-        ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
+        ul { list-style: none; padding: 0; margin: 0; }
 
         li {
             background: rgba(255, 255, 255, 0.9);
@@ -115,9 +108,7 @@
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        li:hover {
-            transform: translateX(6px);
-        }
+        li:hover { transform: translateX(6px); }
 
         .matched li {
             border-left: 4px solid var(--mint);
@@ -189,29 +180,33 @@
     </ul>
 
     <h3>Skill Breakdown Chart</h3>
-    <img src="{{ chart_path }}" width="500">
+    <img src="{{ url_for('static', filename='skill_chart.png') }}" width="500">
 
     <div class="insight">
         Strengthen the missing skills to increase your chances of passing ATS filters.
     </div>
 
+    {% if best_role is defined %}
     <h3>🏆 Best Matching Career Role</h3>
     <div class="score-wrap">
         <span class="score">{{ best_role.role }} - {{ best_role.score }}%</span>
         <span class="score-label">Highest Compatibility Based on Your Resume</span>
     </div>
+    {% endif %}
 
+    {% if top_roles is defined %}
     <h3>📊 Role Comparison Overview</h3>
     <ul class="matched">
         {% for item in top_roles %}
             <li>
                 {{ item.role }} — {{ item.score }}%
-                {% if item.role == best_role.role %}
+                {% if best_role is defined and item.role == best_role.role %}
                     ⭐
                 {% endif %}
             </li>
         {% endfor %}
     </ul>
+    {% endif %}
 
     <a href="/">← Analyze Another Resume</a>
 </div>
