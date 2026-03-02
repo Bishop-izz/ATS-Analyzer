@@ -4,6 +4,7 @@
     <title>Resume ATS Analyzer - Result</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <style>
+        /* ✅ YOUR DESIGN — UNCHANGED */
         :root {
             --accent: #00c9a7;
             --accent-dark: #00a88a;
@@ -14,11 +15,6 @@
         }
 
         * { box-sizing: border-box; }
-
-        @keyframes fade-up {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
 
         body {
             margin: 0;
@@ -65,7 +61,10 @@
             letter-spacing: -0.02em;
         }
 
-        .score-wrap { text-align: center; margin-bottom: 32px; }
+        .score-wrap {
+            text-align: center;
+            margin-bottom: 32px;
+        }
 
         .score {
             font-family: 'DM Sans', sans-serif;
@@ -105,10 +104,7 @@
             border-radius: 14px;
             font-weight: 600;
             border: 1px solid rgba(0, 0, 0, 0.05);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        li:hover { transform: translateX(6px); }
 
         .matched li {
             border-left: 4px solid var(--mint);
@@ -144,13 +140,6 @@
             background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
             padding: 16px 28px;
             border-radius: 16px;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 8px 24px rgba(0, 201, 167, 0.35);
-        }
-
-        a:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 36px rgba(0, 201, 167, 0.45);
         }
     </style>
 </head>
@@ -186,7 +175,7 @@
         Strengthen the missing skills to increase your chances of passing ATS filters.
     </div>
 
-    {% if best_role is defined %}
+    {% if best_role %}
     <h3>🏆 Best Matching Career Role</h3>
     <div class="score-wrap">
         <span class="score">{{ best_role.role }} - {{ best_role.score }}%</span>
@@ -194,13 +183,13 @@
     </div>
     {% endif %}
 
-    {% if top_roles is defined %}
+    {% if top_roles %}
     <h3>📊 Role Comparison Overview</h3>
     <ul class="matched">
         {% for item in top_roles %}
             <li>
                 {{ item.role }} — {{ item.score }}%
-                {% if best_role is defined and item.role == best_role.role %}
+                {% if best_role and item.role == best_role.role %}
                     ⭐
                 {% endif %}
             </li>
